@@ -23,7 +23,7 @@ public class UpService {
 	  }
 	  
   }
-  public Up  selectUp() throws Exception{
+  public List<Up>  selectUp() throws Exception{
 	  try {
 		return upDao.selectUp();
 	} catch (SQLException e) {
@@ -32,4 +32,21 @@ public class UpService {
 		throw new Exception();
 	}
   }
+  
+   /**
+	  * 根据uuidFileName 查询up对象
+	  * @param uuidFileName
+	  * @return
+	  * @throws Exception
+	  */
+	 public Up selectUpByUuidFileName(String uuidFileName) throws Exception {
+	   try {
+		return upDao.selectUpByUuidFileName(uuidFileName);
+	} catch (SQLException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		throw new Exception();
+	}
+	 }
+	 
 }

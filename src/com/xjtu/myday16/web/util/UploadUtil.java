@@ -2,6 +2,7 @@ package com.xjtu.myday16.web.util;
 
 import java.io.File;
 
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +18,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+
 
 import com.xjtu.myday16.web.domin.Up;
 import com.xjtu.myday16.web.domin.User;
@@ -122,7 +124,7 @@ public static  String UuidFileName(String realFileName) {
 
 
 //将上传文件封装成JavaBean对象中
-	public static User doUpload(HttpServletRequest request) throws Exception{
+	public static User doUpload(HttpServletRequest request,List<Up> upList) throws Exception{
 	
        User user = new User();
 	    //创建上传文件工厂
@@ -160,7 +162,7 @@ public static  String UuidFileName(String realFileName) {
 					//System.out.println("fieldValue:"+user.getUsername());
 				}else{
 					//是上传字段
-			
+			          Up up = new Up();
 			         if(fileItem.getSize() == 0){
 			        	throw  new NoUpfileException();
 			         }
@@ -172,12 +174,16 @@ public static  String UuidFileName(String realFileName) {
 					}*/
 					
 			     	//只有上传<=200K的文件
-					if(fileItem.getSize() > 500 * 1024){
+					/*if(fileItem.getSize() > 500 * 1024){
 						throw new UpfileSizeException();
-					}
+					}*/
 					
-			     	user.getUpfileList().add(fileItem);
-			          
+			        user.getUpfileList().add(fileItem);
+			         up.setUsername(user.getUsername());
+			         up.setRealFileName(realFileName);
+			         String uuidFileName = UploadUtil.UuidFileName(realFileName);
+			         up.setUuidFileName(uuidFileName);
+			         upList.add(up);
 			          
 				}
 			}
@@ -202,30 +208,29 @@ public static  String UuidFileName(String realFileName) {
 	   List<FileItem>  fileItemList  =  user.getUpfileList();
 	    
 		//FileItem  fileItem = user.getUpfile();
-	   
+	   int  index = 0;
 	   for(FileItem fileItem : fileItemList){
-		   Up up = new Up();
-		   up.setUsername(user.getUsername());
+
+		 
 		 //取得真实文件名
 			String realFileName = fileItem.getName();
 			
 			realFileName = UploadUtil.getRealFileName(realFileName);
 					
 			//取得uuid文件名
-			String uuidFileName = UploadUtil.UuidFileName(realFileName);
-			
+			//String uuidFileName = UploadUtil.UuidFileName(realFileName);
+			String uuidFileName = upList.get(index).getUuidFileName();
 	        //取得uuid文件路径
 			String uuidFilePath = UploadUtil.UuidFilePath(uploadPath,uuidFileName);
 			//取得输入流
 	        InputStream in= fileItem.getInputStream();
 	       //保存
 	       UploadUtil.doSave(in, uuidFilePath, uuidFileName);
-	       up.setRealFileName(realFileName);
-	       up.setUuidFileName(uuidFileName);
-	       upList.add(up);
+	      
 	       System.out.println("uuidFilePath:uuidFileName"+uuidFilePath+":"+uuidFileName);      
 	       //删除临时文件，一定要在关闭流之后
 	       fileItem.delete();
+	       index++;
 	   }
 		
        

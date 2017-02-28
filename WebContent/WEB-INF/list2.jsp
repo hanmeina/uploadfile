@@ -9,12 +9,12 @@
   			<th>文件名</th>
   			<th>操作</th>
   		</tr>
-  		<c:forEach var="upList" items="${requestScope.upList}">
+  		<c:forEach var="entry" items="${requestScope.map}">
 	  		<tr>
-	  			<td>${upList.realFileName}</td>	
+	  			<td>${entry.value}</td>	
 	  			<td>
 	  				<c:url var="myURL" value="/DownloadServlet">
-	  					<c:param name="uuidFileName" value="${upList.uuidFileName}"/>
+	  					<c:param name="uuidFileName" value="${entry.key}"/>
 	  				</c:url>
 	  				<a  href="${myURL}" 
 	  					style="text-decoration:none">

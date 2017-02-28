@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +27,7 @@ import com.xjtu.myday16.web.exception.NoUpfileException;
 import com.xjtu.myday16.web.exception.UpfileSizeException;
 import com.xjtu.myday16.web.exception.UpfileTypeException;
 import com.xjtu.myday16.web.service.UpService;
+import com.xjtu.myday16.web.util.JdbcUtil;
 import com.xjtu.myday16.web.util.UploadUtil;
 
 import sun.awt.image.BytePackedRaster;
@@ -33,25 +35,30 @@ import sun.nio.cs.ext.ISCII91;
 import sun.security.util.ByteArrayTagOrder;
 
 /**
- * 上传文件使用FileUpload组件
+ * 上传文件使用FileUpload组件，DB版
  */
 public class UploadServlet extends HttpServlet {
-	UpService upService = new UpService();
+	
 	private static final long serialVersionUID = 1L;
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	try {
-		User user = UploadUtil.doUpload(request);
-	   
-		    if(user!=null){
-		    //System.out.println(user!=null);
-		    String uploadPath = this.getServletContext().getRealPath(UploadUtil.uploadPath);
-		    List<Up> upList = new ArrayList<>();		    
-		     UploadUtil.doSave(user,uploadPath,upList);
+		String uploadPath = this.getServletContext().getRealPath(UploadUtil.uploadPath);
+		List<Up> upList = new ArrayList<>();
+		User user = UploadUtil.doUpload(request,upList);
+		    //事务开始
+			JdbcUtil.begin();
+		     //写入表
+			 UpService upService = new UpService();
 		     upService.addUp(upList);
+		     //int  i = 5/0;
+		     //写入硬盘
+		     UploadUtil.doSave(user,uploadPath,upList);
+		        //事务提交
+				JdbcUtil.commit();
 			 request.setAttribute("message", "上传文件成功");
 			 request.getRequestDispatcher("/WEB-INF/message.jsp").forward(request, response);
 		 	
-		 	}
+		 	
 	}catch (NoUpfileException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
@@ -69,10 +76,29 @@ public class UploadServlet extends HttpServlet {
 		   request.getRequestDispatcher("/WEB-INF/message.jsp").forward(request, response);
 	}   catch (Exception e) {
 		// TODO Auto-generated catch block
+		
+		
+	  	try {
+	  	    //事务回滚
+			JdbcUtil.rollback();
+			//事务提交
+			JdbcUtil.commit();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 		e.printStackTrace();
 		  request.setAttribute("message", "上传文件失败");
-		   request.getRequestDispatcher("/WEB-INF/message.jsp").forward(request, response);
-	}   
+	
+		  request.getRequestDispatcher("/WEB-INF/message.jsp").forward(request, response);
+	}finally{
+		try {
+			//关闭Connection对象，并分离线程
+			JdbcUtil.closeConnection();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
 	}
 	
